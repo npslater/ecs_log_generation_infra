@@ -1,0 +1,25 @@
+{
+    "Services": [
+        {
+            "serviceName": "DummyService",
+            "pipeline": {
+                "name": "DummyServicePipeline",
+                "logGroup": "ecs_log_generation",
+                "logStream": "dummy_service",
+                "github": {
+                    "owner": "npslater",
+                    "repo": "ecs_log_generation_dummy_service",
+                    "secretName": "github_token"
+                },
+                "codebuild": {
+                    "projectName": "ecs_log_generation_dummy_service",
+                    "environmentVariables": [
+                        {"name": "DOCKERHUB_USERNAME","value":"dockerhub:username","type":"SECRETS_MANAGER"},
+                        {"name": "DOCKERHUB_PASSWORD","value":"dockerhub:password","type":"SECRETS_MANAGER"},
+                        {"name": "REPOSITORY_URI","value":"repo","type":"PLAINTEXT"}]
+                },
+            "ecrRepoName": "dummy_service" 
+            }
+        }
+    ]
+}
