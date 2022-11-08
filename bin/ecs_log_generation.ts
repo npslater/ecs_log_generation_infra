@@ -2,9 +2,12 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { EcsLogGenerationStack } from '../lib/ecs_log_generation-stack';
+import { StackConfig } from '../stack_config';
+import * as fs from 'fs';
 
+const stackConfig: StackConfig = JSON.parse(fs.readFileSync("stack_config.json", "utf8"));
 const app = new cdk.App();
-new EcsLogGenerationStack(app, 'EcsLogGenerationStack', {
+const logGenStack = new EcsLogGenerationStack(app, 'EcsLogGenerationStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
@@ -18,4 +21,4 @@ new EcsLogGenerationStack(app, 'EcsLogGenerationStack', {
   // env: { account: '123456789012', region: 'us-east-1' },
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-});
+}, stackConfig.Services[0]);

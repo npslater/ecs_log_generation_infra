@@ -1,35 +1,36 @@
-import * as fs from 'fs';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { SecretValue } from 'aws-cdk-lib';
-import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline';
-import { CodeBuildAction, GitHubSourceAction } from 'aws-cdk-lib/aws-codepipeline-actions';
-import {StackConfig} from "../stack_config";
+import { CodeBuildAction, EcsDeployAction, GitHubSourceAction } from 'aws-cdk-lib/aws-codepipeline-actions';
+import {Service} from "../stack_config";
 import { BuildEnvironmentVariable, BuildEnvironmentVariableType, PipelineProject } from 'aws-cdk-lib/aws-codebuild';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
+import { Cluster, ContainerImage } from 'aws-cdk-lib/aws-ecs';
+import { ApplicationLoadBalancedEc2Service } from 'aws-cdk-lib/aws-ecs-patterns';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 
 export class EcsLogGenerationStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  
+  public readonly pipeline: Pipeline;
+  public readonly buildOutput: [Artifact];
+
+  constructor(scope: Construct, id: string, props: cdk.StackProps, service: Service) {
     super(scope, id, props);
 
-    const stackConfig: StackConfig = JSON.parse(fs.readFileSync("stack_config.json", "utf8"));
-    const service = stackConfig.Services[0];
+    const ecrRepo = Repository.fromRepositoryName(this, "EcrRepo", service.serviceName);
 
-    const ecrRepo = new Repository(this, "DummyServiceEcrRepo", {
-      repositoryName: service.pipeline.ecrRepoName
-    });
     const repoEnv = service.pipeline.codebuild.environmentVariables.find((variable) => {
       return variable.name == "REPOSITORY_URI"
     });
     if ( repoEnv != null ) repoEnv.value = ecrRepo.repositoryUri;
     
-    const pipeline = new Pipeline(this, service.pipeline.name);
+    this.pipeline = new Pipeline(this, service.pipeline.name);
 
     const sourceOutput = new Artifact();
-    pipeline.addStage({
+    this.pipeline.addStage({
       stageName: "Source",
       actions: [
         new GitHubSourceAction({
@@ -67,6 +68,7 @@ export class EcsLogGenerationStack extends cdk.Stack {
       }
     });
 
+    this.buildOutput = [new Artifact()];
     const buildProject = new PipelineProject(this, "buildProject", {
       projectName: "build",
       environmentVariables: envVars,
@@ -81,27 +83,44 @@ export class EcsLogGenerationStack extends cdk.Stack {
       }
     });
     ecrRepo.grantPullPush(buildProject.grantPrincipal);
-    pipeline.addStage({
+    this.pipeline.addStage({
       stageName: "Build",
       actions: [
         new CodeBuildAction({
           actionName: "Build_Container",
           input: sourceOutput,
-          project: buildProject
+          project: buildProject,
+          outputs: this.buildOutput
         })
       ]
     });
 
-    /**
     const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
-      isDefault: true
-    });
+      isDefault: true});
 
     const cluster = new Cluster(this, "Cluster", { vpc: vpc});
-    cluster.addCapacity("DefaultCapacity", {
+      cluster.addCapacity("DefaultCapacity", {
       instanceType: new ec2.InstanceType("t3.nano"),
-      desiredCapacity: 2
+      desiredCapacity: 3
     });
-    **/
-  }
+
+    const loadBalancedService = new ApplicationLoadBalancedEc2Service(this, service.serviceName, {
+    cluster,
+    memoryLimitMiB: 128,
+    taskImageOptions: {
+        image: ContainerImage.fromEcrRepository(ecrRepo)
+    },
+    desiredCount: 1
+    });
+    
+    this.pipeline.addStage({
+      stageName: "Deploy",
+      actions: [
+          new EcsDeployAction({
+          service: loadBalancedService.service,
+          actionName: "DeployEcs",
+          input: this.buildOutput[0]
+      })]
+    });
+  } 
 }

@@ -1,9 +1,9 @@
 {
     "Services": [
         {
-            "serviceName": "DummyService",
+            "serviceName": "dummy_service",
             "pipeline": {
-                "name": "DummyServicePipeline",
+                "name": "dummy_service_pipeline",
                 "logGroup": "ecs_log_generation",
                 "logStream": "dummy_service",
                 "github": {
