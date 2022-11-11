@@ -9,7 +9,8 @@
                 "github": {
                     "owner": "npslater",
                     "repo": "ecs_log_generation_dummy_service",
-                    "secretName": "github_token"
+                    "secretName": "github_token",
+                    "cloneUrl": "https://github.com/npslater/ecs_log_generation_dummy_service.git"
                 },
                 "codebuild": {
                     "projectName": "ecs_log_generation_dummy_service",
@@ -18,7 +19,31 @@
                         {"name": "DOCKERHUB_PASSWORD","value":"dockerhub:password","type":"SECRETS_MANAGER"},
                         {"name": "REPOSITORY_URI","value":"repo","type":"PLAINTEXT"}]
                 },
-            "ecrRepoName": "dummy_service" 
+                "ecrRepoName": "initecrrepostack-dummyservicedd3babc4-pxjyyar8jplz"
+            }
+        }
+    ],
+    "Tasks": [
+        {
+            "taskName": "ec2_price_fetcher",
+            "pipeline": {
+                "name": "ec2_price_fetcher",
+                "logGroup": "ecs_log_generation",
+                "logStream": "ec2_price_fetcher",
+                "github": {
+                    "owner": "npslater",
+                    "repo": "ecs_price_fetcher",
+                    "secretName": "github_token",
+                    "cloneUrl": "https://github.com/npslater/ec2_price_fetcher.git"
+                },
+                "codebuild": {
+                    "projectName": "ec2_price_fetcher",
+                    "environmentVariables": [
+                        {"name": "DOCKERHUB_USERNAME","value":"dockerhub:username","type":"SECRETS_MANAGER"},
+                        {"name": "DOCKERHUB_PASSWORD","value":"dockerhub:password","type":"SECRETS_MANAGER"},
+                        {"name": "REPOSITORY_URI","value":"repo","type":"PLAINTEXT"}]
+                },
+                "ecrRepoName": "<INSERT REPO NAME HERE AFTER RUNNING INIT ECR REPO STACK>"
             }
         }
     ]

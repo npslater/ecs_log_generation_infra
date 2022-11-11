@@ -2,6 +2,7 @@
 
 export interface StackConfig {
     Services: Service[];
+    Tasks:    Task[];
 }
 
 export interface Service {
@@ -33,4 +34,10 @@ export interface Github {
     owner:      string;
     repo:       string;
     secretName: string;
+    cloneUrl:   string;
+}
+
+export interface Task {
+    taskName: string;
+    pipeline: Pipeline;
 }
