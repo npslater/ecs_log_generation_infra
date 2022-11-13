@@ -17,7 +17,8 @@
                     "environmentVariables": [
                         {"name": "DOCKERHUB_USERNAME","value":"dockerhub:username","type":"SECRETS_MANAGER"},
                         {"name": "DOCKERHUB_PASSWORD","value":"dockerhub:password","type":"SECRETS_MANAGER"},
-                        {"name": "REPOSITORY_URI","value":"repo","type":"PLAINTEXT"}]
+                        {"name": "REPOSITORY_URI","value":"repo","type":"PLAINTEXT"},
+                        {"name": "CONTAINER_NAME","value":"web","type":"PLAINTEXT"}]
                 },
                 "ecrRepoName": "initecrrepostack-dummyservicedd3babc4-pxjyyar8jplz"
             }
@@ -41,7 +42,8 @@
                     "environmentVariables": [
                         {"name": "DOCKERHUB_USERNAME","value":"dockerhub:username","type":"SECRETS_MANAGER"},
                         {"name": "DOCKERHUB_PASSWORD","value":"dockerhub:password","type":"SECRETS_MANAGER"},
-                        {"name": "REPOSITORY_URI","value":"repo","type":"PLAINTEXT"}]
+                        {"name": "REPOSITORY_URI","value":"repo","type":"PLAINTEXT"},
+                        {"name": "CONTAINER_NAME","value":"task","type":"PLAINTEXT"}]
                 },
                 "ecrRepoName": "<INSERT REPO NAME HERE AFTER RUNNING INIT ECR REPO STACK>"
             }

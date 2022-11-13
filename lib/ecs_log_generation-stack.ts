@@ -9,6 +9,7 @@ import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { Cluster, ContainerImage } from 'aws-cdk-lib/aws-ecs';
 import { ApplicationLoadBalancedEc2Service } from 'aws-cdk-lib/aws-ecs-patterns';
 import { StackConfig } from '../stack_config';
+import * as ecs from "aws-cdk-lib/aws-ecs";
 
 
 export class EcsLogGenerationStack extends cdk.Stack {
@@ -23,6 +24,28 @@ export class EcsLogGenerationStack extends cdk.Stack {
         return variable.name == "REPOSITORY_URI"
       });
       if ( repoEnv != null ) repoEnv.value = ecrRepo.repositoryUri;
+
+
+      const loadBalancedService = new ApplicationLoadBalancedEc2Service(this, service.serviceName, {
+        cluster,
+        memoryLimitMiB: 128,
+        taskImageOptions: {
+            image: ContainerImage.fromEcrRepository(ecrRepo),
+            enableLogging: true,
+            logDriver: new ecs.AwsLogDriver({streamPrefix: service.serviceName})
+        },
+        desiredCount: 1
+      });
+      const serviceResourceEnv = service.pipeline.codebuild.environmentVariables.find((variable) => {
+        return variable.name == "CONTAINER_NAME"
+      });
+
+      if ( serviceResourceEnv != null ) {
+        if ( loadBalancedService.taskDefinition.defaultContainer?.containerName != null )
+          serviceResourceEnv.value =loadBalancedService.taskDefinition.defaultContainer?.containerName;
+        else
+          serviceResourceEnv.value = "web";
+      }
 
       const pipeline = new Pipeline(this, service.pipeline.name);
 
@@ -65,7 +88,6 @@ export class EcsLogGenerationStack extends cdk.Stack {
         }
       });
 
-
       const buildOutput = [new Artifact()];
       const buildProject = new PipelineProject(this, "buildProject", {
         projectName: "build",
@@ -91,15 +113,6 @@ export class EcsLogGenerationStack extends cdk.Stack {
             outputs: buildOutput
           })
         ]
-      });
-
-      const loadBalancedService = new ApplicationLoadBalancedEc2Service(this, service.serviceName, {
-        cluster,
-        memoryLimitMiB: 128,
-        taskImageOptions: {
-            image: ContainerImage.fromEcrRepository(ecrRepo)
-        },
-        desiredCount: 1
       });
 
       pipeline.addStage({
