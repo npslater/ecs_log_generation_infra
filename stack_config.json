@@ -1,11 +1,11 @@
 {
     "Services": [
         {
-            "serviceName": "dummy_service",
+            "serviceName": "ecs_log_service",
             "pipeline": {
-                "name": "dummy_service_pipeline",
-                "logGroup": "ecs_log_generation",
-                "logStream": "dummy_service",
+                "name": "ecs_log_service_pipeline",
+                "logGroup": "ecs_log",
+                "logStream": "log_service",
                 "github": {
                     "owner": "npslater",
                     "repo": "ecs_log_generation_dummy_service",
@@ -13,7 +13,30 @@
                     "cloneUrl": "https://github.com/npslater/ecs_log_generation_dummy_service.git"
                 },
                 "codebuild": {
-                    "projectName": "ecs_log_generation_dummy_service",
+                    "projectName": "ecs_log_service",
+                    "environmentVariables": [
+                        {"name": "DOCKERHUB_USERNAME","value":"dockerhub:username","type":"SECRETS_MANAGER"},
+                        {"name": "DOCKERHUB_PASSWORD","value":"dockerhub:password","type":"SECRETS_MANAGER"},
+                        {"name": "REPOSITORY_URI","value":"repo","type":"PLAINTEXT"},
+                        {"name": "CONTAINER_NAME","value":"web","type":"PLAINTEXT"}]
+                },
+                "ecrRepoName": "initecrrepostack-dummyservicedd3babc4-pxjyyar8jplz"
+            }
+        },
+        {
+            "serviceName": "fargate_log_service",
+            "pipeline": {
+                "name": "fargate_log_service_pipeline",
+                "logGroup": "fargate_log",
+                "logStream": "log_service",
+                "github": {
+                    "owner": "npslater",
+                    "repo": "ecs_log_generation_dummy_service",
+                    "secretName": "github_token",
+                    "cloneUrl": "https://github.com/npslater/ecs_log_generation_dummy_service.git"
+                },
+                "codebuild": {
+                    "projectName": "fargate_log_service",
                     "environmentVariables": [
                         {"name": "DOCKERHUB_USERNAME","value":"dockerhub:username","type":"SECRETS_MANAGER"},
                         {"name": "DOCKERHUB_PASSWORD","value":"dockerhub:password","type":"SECRETS_MANAGER"},

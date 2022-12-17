@@ -7,12 +7,12 @@ import { BuildEnvironmentVariable, BuildEnvironmentVariableType, PipelineProject
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { Cluster, ContainerImage } from 'aws-cdk-lib/aws-ecs';
-import { ApplicationLoadBalancedEc2Service } from 'aws-cdk-lib/aws-ecs-patterns';
-import { Service, StackConfig } from '../stack_config';
+import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
+import { Service } from '../stack_config';
 import * as ecs from "aws-cdk-lib/aws-ecs";
 
 
-export class EcsLogGenerationStack extends cdk.Stack {
+export class FargateLogGenerationStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: cdk.StackProps, service: Service, cluster:Cluster) {
     super(scope, id, props);
@@ -24,16 +24,21 @@ export class EcsLogGenerationStack extends cdk.Stack {
       if ( repoEnv != null ) repoEnv.value = ecrRepo.repositoryUri;
 
 
-      const loadBalancedService = new ApplicationLoadBalancedEc2Service(this, service.serviceName, {
+      const loadBalancedService = new ApplicationLoadBalancedFargateService(this, service.serviceName, {
         cluster,
-        memoryLimitMiB: 128,
+        memoryLimitMiB: 512,
+        cpu:256,
         taskImageOptions: {
             image: ContainerImage.fromEcrRepository(ecrRepo),
             enableLogging: true,
             logDriver: new ecs.AwsLogDriver({streamPrefix: service.serviceName})
         },
-        desiredCount: 1
+        desiredCount: 4,
+        platformVersion: ecs.FargatePlatformVersion.VERSION1_3,
+        assignPublicIp:true
       });
+      ecrRepo.grantPull(loadBalancedService.taskDefinition.obtainExecutionRole());
+
 
       const serviceResourceEnv = service.pipeline.codebuild.environmentVariables.find((variable) => {
         return variable.name == "CONTAINER_NAME"
@@ -123,5 +128,6 @@ export class EcsLogGenerationStack extends cdk.Stack {
             input: buildOutput[0]
         })]
       });
+
   }  //end constructor
 } //end module
